@@ -31,6 +31,8 @@ public class TileController : MonoBehaviour
     private static TileController previousSelected = null;
 
     private bool isSelected = false;
+
+    private GameFlowManager game;
     
     public bool IsDestroyed { get; private set; }
     public bool IsProcessing { get; private set; }
@@ -38,6 +40,7 @@ public class TileController : MonoBehaviour
 
     private void Awake()
     {
+        game = GameFlowManager.Instance;
         board = BoardManager.Instance;
         render = GetComponent<SpriteRenderer>();
     }
@@ -52,7 +55,7 @@ public class TileController : MonoBehaviour
     private void OnMouseDown()
     {
         // Non selectable conditions
-        if (render.sprite == null || board.IsAnimating)
+        if (render.sprite == null || board.IsAnimating || game.IsGameOver)
         {
             return;
         }
