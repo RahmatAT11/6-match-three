@@ -60,6 +60,8 @@ public class TileController : MonoBehaviour
             return;
         }
         
+        SoundManager.Instance.PlayTap();
+        
         // apakah sudah memilih tile ini?
         if (isSelected)
         {
@@ -89,6 +91,7 @@ public class TileController : MonoBehaviour
                         }
                         else
                         {
+                            SoundManager.Instance.PlayWrong();
                             SwapTile(otherTile);
                         }
                     });
