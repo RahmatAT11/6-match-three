@@ -1,7 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
+using Vector2 = UnityEngine.Vector2;
 
 public class TileController : MonoBehaviour
 {
@@ -14,6 +15,12 @@ public class TileController : MonoBehaviour
     private static readonly Color normalColor = Color.white;
 
     private static readonly float moveDuration = 0.5f;
+    private static readonly float destroyBigDuration = 0.1f;
+    private static readonly float destroySmallDuration = 0.4f;
+
+    private static readonly Vector2 sizeBig = Vector2.one * 1.2f;
+    private static readonly Vector2 sizeSmall = Vector2.zero;
+    private static readonly Vector2 sizeNormal = Vector2.one;
 
     private static readonly Vector2[] adjacentDirection = 
     {
@@ -26,11 +33,20 @@ public class TileController : MonoBehaviour
     private bool isSelected = false;
     
     public bool IsDestroyed { get; private set; }
+    public bool IsProcessing { get; private set; }
+    public bool IsSwapping { get; private set; }
 
     private void Awake()
     {
         board = BoardManager.Instance;
         render = GetComponent<SpriteRenderer>();
+    }
+
+    private void Start()
+    {
+        IsProcessing = false;
+        IsSwapping = false;
+        IsDestroyed = false;
     }
 
     private void OnMouseDown()
@@ -66,7 +82,7 @@ public class TileController : MonoBehaviour
                     {
                         if (board.GetAllMatches().Count > 0)
                         {
-                            Debug.Log("MATCH FOUND");
+                            board.Process();
                         }
                         else
                         {
@@ -95,6 +111,14 @@ public class TileController : MonoBehaviour
         this.id = id;
 
         name = "TILE_" + id + "(" + x + "," + y + ")";
+    }
+
+    public void GenerateRandomTile(int x, int y)
+    {
+        transform.localScale = sizeNormal;
+        IsDestroyed = false;
+        
+        ChangeId(Random.Range(0, board.tileTypes.Count), x, y);
     }
 
     #region Adjacent
@@ -241,5 +265,42 @@ public class TileController : MonoBehaviour
         transform.position = targetPosition;
         
         onCompleted?.Invoke();  
+    }
+
+    public IEnumerator SetDestroyed(System.Action onCompleted)
+    {
+        IsDestroyed = true;
+        id = -1;
+        name = "TILE_NULL";
+
+        Vector2 startSize = transform.localScale;
+        float time = 0.0f;
+
+        while (time < destroyBigDuration)
+        {
+            transform.localScale = Vector2.Lerp(startSize, sizeBig, time / destroyBigDuration);
+            time += Time.deltaTime;
+
+            yield return new WaitForEndOfFrame();
+        }
+
+        transform.localScale = sizeBig;
+
+        startSize = transform.localScale;
+        time = 0.0f;
+
+        while (time < destroySmallDuration)
+        {
+            transform.localScale = Vector2.Lerp(startSize, sizeSmall, time / destroySmallDuration);
+            time += Time.deltaTime;
+
+            yield return new WaitForEndOfFrame();
+        }
+
+        transform.localScale = sizeSmall;
+
+        render.sprite = null;
+        
+        onCompleted?.Invoke();
     }
 }
